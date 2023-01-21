@@ -12,8 +12,8 @@ export default async function appRoutes(app: FastifyInstance) {
 
         const { title, weekDays } = createHabitBody.parse(request.body)
 
-        const today = dayjs().startOf("day").toDate()
-        today.setUTCHours(0)
+        const today = dayjs().startOf("day").add(dayjs().utcOffset(), 'minute').toDate()
+        console.log(`Creating habit '${title}' at (${today.toISOString()})`)
 
         const habit = await prisma.habit.create({
             data: {
@@ -35,6 +35,7 @@ export default async function appRoutes(app: FastifyInstance) {
         })
 
         const date = dayjs(getDayParams.parse(request.query).date).toDate()
+        console.log(`Getting day: ${date.toISOString()}`)
         const possibleHabits = await prisma.habit.findMany({
             where: {
                 createdAt: {
@@ -66,5 +67,87 @@ export default async function appRoutes(app: FastifyInstance) {
             completedHabits
         }
 
+    })
+
+    app.patch("/habits/:id/toggle", async (request) => {
+        const toggleHabitParams = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } = toggleHabitParams.parse(request.params)
+
+        const today = dayjs().startOf("day").add(dayjs().utcOffset(), 'minute').toDate()
+        console.log(`Toggling habit id='${id}' at (${today.toISOString()})`)
+
+        let day = await prisma.day.findUnique({
+            where: {
+                date: today
+            }
+        })
+
+        if (!day) {
+            day = await prisma.day.create({
+                data: {
+                    date: today,
+                }
+            })
+        }
+
+        let dayHabit = await prisma.dayHabit.findUnique({
+            where: {
+                dayId_habitId: {
+                    dayId: day.id,
+                    habitId: id,
+                }
+            }
+        })
+        let status = true;
+        if (dayHabit) {
+            dayHabit = await prisma.dayHabit.delete({
+                where: {
+                    id: dayHabit.id,
+                }
+            })
+            status = false
+        } else {
+            dayHabit = await prisma.dayHabit.create({
+                data: {
+                    dayId: day.id,
+                    habitId: id,
+                }
+            })
+        }
+        return {
+            status: status,
+            dayHabit
+        }
+    })
+
+    app.get("/summary", async () => {
+        const summary = await prisma.$queryRaw`
+            SELECT 
+                D.id, 
+                D.date,
+                (
+                    SELECT 
+                        cast(count(*) as float)
+                    FROM day_habits DH
+                    WHERE DH.dayId = D.id
+                ) as completed,
+                (
+                    SELECT 
+                        cast(count(*) as float)
+                    FROM habit_week_days HWD
+                    JOIN habits H
+                        ON H.id = HWD.habitId
+                    WHERE 
+                        HWD.weekDay = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int) 
+                        AND H.createdAt <= D.date
+                ) as possible
+            FROM days D
+
+        `
+
+        return summary
     })
 }

@@ -19,7 +19,14 @@ export default function Table() {
             </div>
             <div className="grid grid-rows-7 grid-flow-col gap-3">
                 {
-                    dates.map(d => (<DayTile date={d} key={d.toString()}> a</DayTile>))
+                    dates.map(d => (
+                        <DayTile
+                            key={d.toString()}
+                            date={d}
+                            completed={Math.round(Math.random() * 10)}
+                            possible={10}
+                        />
+                    ))
                 }
                 {
                     daysToLoad > 0 && Array.from({ length: daysToLoad }).map((_, i) => (

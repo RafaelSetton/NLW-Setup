@@ -39,6 +39,8 @@ export default function Home() {
                             date => (
                                 <DayTile
                                     key={date.toISOString()}
+                                    date={date.toISOString()}
+
                                 />
                             )
                         )
