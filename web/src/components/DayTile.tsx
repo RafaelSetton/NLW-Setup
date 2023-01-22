@@ -1,27 +1,19 @@
 import { ReactNode } from "react"
 import * as Popover from '@radix-ui/react-popover'
+
 import ProgressBar from "./ProgressBar"
 import dayjs from "dayjs"
 import clsx from 'clsx'
+import CheckBox from "./CheckBox"
 
 interface DayTileProps {
     date: Date
-    possible: number
-    completed: number
+    possible?: number
+    completed?: number
 }
 
-export default function DayTile(props: DayTileProps) {
-    const weekDays = [
-        "domingo",
-        "segunda-feira",
-        "terça-feira",
-        "quarta-feira",
-        "quinta-feira",
-        "sexta-feira",
-        "sábado"
-    ]
-
-    const completedPercentage = 100 * props.completed / props.possible
+export default function DayTile({ date, possible = 0, completed = 0 }: DayTileProps) {
+    const completedPercentage = possible > 0 ? 100 * completed / possible : 0
 
     return (
         <Popover.Root>
@@ -40,10 +32,21 @@ export default function DayTile(props: DayTileProps) {
 
             <Popover.Portal>
                 <Popover.Content className="min-w-[320px] p-6 rounded-2xl bg-zinc-900 flex flex-col" >
-                    <span className="font-semibold text-zinc-400" >{weekDays[props.date.getDay()]}</span>
-                    <span className="mt-1 font-extrabold leading-tight text-3xl" >{dayjs(props.date).format("DD/MM")}</span>
+                    <span className="font-semibold text-zinc-400" >
+                        {dayjs(date).format("dddd")}
+                    </span>
+                    <span className="mt-1 font-extrabold leading-tight text-3xl" >
+                        {dayjs(date).format("DD/MM")}
+                    </span>
 
                     <ProgressBar progress={completedPercentage} />
+
+                    <div className="mt-6 flex flex-col gap-3">
+                        <CheckBox />
+                        <CheckBox />
+                        <CheckBox />
+                        <CheckBox />
+                    </div>
 
                     <Popover.Arrow className="fill-zinc-900 w-4 h-2" />
                 </Popover.Content>

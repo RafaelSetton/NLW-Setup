@@ -8,6 +8,7 @@ module.exports = {
         extend: {
             colors: {
                 background: '#09090a',
+                whitee: "#fff"
             },
             fontFamily: {
                 regular: 'Inter_400Regular',

@@ -1,15 +1,48 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, Alert } from 'react-native'
 import DayTile, { DAY_SIZE } from '../components/DayTile'
 import Header from '../components/Header'
 import generateDateRange from '../utils/generateDateRange'
+import api from '../lib/axios'
+import { useState, useEffect } from 'react'
+import dayjs from 'dayjs'
+import Loading from '../components/Loading'
 
 const dates = generateDateRange()
 
 const minimumDaysLoaded = 10 * 7
 const daysToLoad = minimumDaysLoaded - dates.length
 
+type Summary = Array<{
+    id: string;
+    date: string;
+    possible: number;
+    completed: number;
+}>
+
 export default function Home() {
-    return (
+    const [loading, setLoading] = useState(true)
+    const [summary, setSummary] = useState<Summary>([])
+
+    async function fetchData() {
+        try {
+            setLoading(true)
+            const response = await api.get("/summary")
+            console.log(response.data)
+            setSummary(response.data)
+        }
+        catch (err) {
+            Alert.alert("Ops", "Algo não ocorreu como esperado")
+            console.log(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchData()
+    }, [])
+
+    return loading ? <Loading /> : (
         <View className='flex-1 bg-background px-8 pt-16'>
             <Header />
             <View
@@ -36,13 +69,17 @@ export default function Home() {
                 >
                     {
                         dates.map(
-                            date => (
-                                <DayTile
-                                    key={date.toISOString()}
-                                    date={date.toISOString()}
-
-                                />
-                            )
+                            date => {
+                                const dayInSummary = summary.find(d => dayjs(date).isSame(d.date, 'day'))
+                                return (
+                                    <DayTile
+                                        key={date.toISOString()}
+                                        date={date}
+                                        completed={dayInSummary?.completed}
+                                        possible={dayInSummary?.possible}
+                                    />
+                                )
+                            }
                         )
                     }
                     {

@@ -1,12 +1,29 @@
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import api from "../lib/axios";
 import generateDateRange from "../utils/generateDateRange";
 import DayTile from "./DayTile";
 import WeekDayHead from "./WeekDayHead";
 
-export default function Table() {
-    const dates = generateDateRange()
+const dates = generateDateRange()
 
-    const minimumLoadedDays = 18 * 7
-    const daysToLoad = minimumLoadedDays - dates.length
+const minimumLoadedDays = 18 * 7
+const daysToLoad = minimumLoadedDays - dates.length
+
+type Summary = Array<{
+    id: string;
+    date: string;
+    possible: number;
+    completed: number;
+}>
+
+export default function Table() {
+    const [summary, setSummary] = useState<Summary>([])
+
+    useEffect(() => {
+        api.get("/summary").then(res => setSummary(res.data)).then(() => console.log(summary))
+
+    }, [])
 
     return (
         <div className="w-full flex">
@@ -19,14 +36,17 @@ export default function Table() {
             </div>
             <div className="grid grid-rows-7 grid-flow-col gap-3">
                 {
-                    dates.map(d => (
-                        <DayTile
-                            key={d.toString()}
-                            date={d}
-                            completed={Math.round(Math.random() * 10)}
-                            possible={10}
-                        />
-                    ))
+                    dates.map(date => {
+                        const dayInSummary = summary.find(d => dayjs(date).isSame(d.date, 'day'))
+                        return (
+                            <DayTile
+                                key={date.toString()}
+                                date={date}
+                                completed={dayInSummary?.completed}
+                                possible={dayInSummary?.possible}
+                            />
+                        )
+                    })
                 }
                 {
                     daysToLoad > 0 && Array.from({ length: daysToLoad }).map((_, i) => (

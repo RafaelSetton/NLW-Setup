@@ -1,8 +1,49 @@
 import { Check } from "phosphor-react";
+import * as CheckBox from "@radix-ui/react-checkbox"
+import { FormEvent, useState } from "react";
+import api from "../lib/axios";
+
+const weekDays = [
+    "Domingo",
+    "Segunda-feira",
+    "Terça-feira",
+    "Quarta-feira",
+    "Quinta-feira",
+    "Sexta-feira",
+    "Sábado"
+]
 
 export default function NewHabitDialog() {
+    const [title, setTitle] = useState('a')
+    const [selectedWeekDays, setSelectedWeekDays] = useState(Array(7).fill(false))
+
+    function handleToggleWeekDay(index: number) {
+        var copy = selectedWeekDays.slice()
+        copy[index] = !copy[index]
+        setSelectedWeekDays(copy)
+    }
+
+    function createNewHabit(event: FormEvent) {
+        event.preventDefault()
+
+        const parsedWeekDays = selectedWeekDays.map((wd, i) => wd ? i : null).filter(el => el !== null)
+
+        if (!title.trim() || parsedWeekDays.length == 0) return;
+
+        api.post("/habits", {
+            title,
+            weekDays: parsedWeekDays,
+        })
+
+        setTitle('')
+        setSelectedWeekDays(Array(7).fill(false))
+
+        alert("Hábito criado com sucesso")
+    }
+
+
     return (
-        <form className="w-full flex flex-col mt-6" >
+        <form onSubmit={createNewHabit} className="w-full flex flex-col mt-6" >
             <label htmlFor="title" className="font-semibold leading-tight">
                 Qual seu comprometimento?
             </label>
@@ -12,11 +53,33 @@ export default function NewHabitDialog() {
                 placeholder="ex. Academia, Beber água, etc..."
                 className="p-4 rounded-lg mt-3 bg-zinc-800 text-white placeholder:text-zinc-400"
                 autoFocus
+                value={title}
+                onChange={ev => setTitle(ev.target.value)}
             />
 
             <label htmlFor="" className="font-semibold leading-tight mt-4">
                 Qual a recorrência?
             </label>
+
+            <div className="flex flex-col gap-2 mt-3">
+                {
+                    weekDays.map((weekDay, i) => (
+                        <CheckBox.Root className="flex items-center gap-3 group" key={weekDay} onCheckedChange={() => handleToggleWeekDay(i)} checked={selectedWeekDays[i]} >
+
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center border-2 border-zinc-800 bg-zinc-900
+                             group-data-[state=checked]:bg-green-500 group-data-[state=checked]:border-green-400">
+                                <CheckBox.Indicator className="flex items-center justify-center">
+                                    <Check size={20} weight="bold" className="text-white" />
+                                </CheckBox.Indicator>
+                            </div>
+
+                            <span className=" text-white leading-tight">
+                                {weekDay}
+                            </span>
+                        </CheckBox.Root>
+                    ))
+                }
+            </div>
 
             <button
                 type="submit"

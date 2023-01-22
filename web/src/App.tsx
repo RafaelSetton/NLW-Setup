@@ -1,7 +1,8 @@
+import './styles/global.css'
+import './lib/dayjs'
+
 import Header from './components/Header'
 import Table from './components/Table'
-import './styles/global.css'
-
 
 export default function App() {
   return (
