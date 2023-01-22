@@ -19,9 +19,11 @@ type Summary = Array<{
 
 export default function Table() {
     const [summary, setSummary] = useState<Summary>([])
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        api.get("/summary").then(res => setSummary(res.data)).then(() => console.log(summary))
+        setLoading(true)
+        api.get("/summary").then(res => setSummary(res.data)).then(() => setLoading(false))
 
     }, [])
 
@@ -36,13 +38,13 @@ export default function Table() {
             </div>
             <div className="grid grid-rows-7 grid-flow-col gap-3">
                 {
-                    dates.map(date => {
+                    !loading && dates.map(date => {
                         const dayInSummary = summary.find(d => dayjs(date).isSame(d.date, 'day'))
                         return (
                             <DayTile
                                 key={date.toString()}
                                 date={date}
-                                completed={dayInSummary?.completed}
+                                defaultCompleted={dayInSummary?.completed}
                                 possible={dayInSummary?.possible}
                             />
                         )

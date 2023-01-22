@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 
 export default function generateDateRange(): Date[] {
-    const begginingOfTime = dayjs().startOf("year")
+    const begginingOfTime = dayjs().startOf("year").add(dayjs().utcOffset(), 'minute')
 
     const today = new Date()
 

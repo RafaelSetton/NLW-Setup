@@ -3,9 +3,10 @@ import DayTile, { DAY_SIZE } from '../components/DayTile'
 import Header from '../components/Header'
 import generateDateRange from '../utils/generateDateRange'
 import api from '../lib/axios'
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import dayjs from 'dayjs'
 import Loading from '../components/Loading'
+import { useFocusEffect } from '@react-navigation/native'
 
 const dates = generateDateRange()
 
@@ -38,9 +39,9 @@ export default function Home() {
         }
     }
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         fetchData()
-    }, [])
+    }, []))
 
     return loading ? <Loading /> : (
         <View className='flex-1 bg-background px-8 pt-16'>

@@ -30,7 +30,7 @@ export default function DayTile({ date, completed = 0, possible = 0 }: DayTilePr
                 ["bg-violet-700 border-violet-500"]: completedPercentage >= 40 && completedPercentage < 60,
                 ["bg-violet-600 border-violet-500"]: completedPercentage >= 60 && completedPercentage < 80,
                 ["bg-violet-500 border-violet-400"]: completedPercentage >= 80,
-                ["border-zinc-400 border-4"]: dayjs().startOf("day").isSame(date),
+                ["border-blue-500 border-4"]: dayjs().startOf("day").add(dayjs().utcOffset(), 'minutes').isSame(date),
             }
             )}
             style={{ width: DAY_SIZE, height: DAY_SIZE }}
