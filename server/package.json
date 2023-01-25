@@ -1,13 +1,14 @@
 {
     "name": "server",
     "version": "1.0.0",
-    "description": "",
+    "description": "API do aplicativo habits",
     "main": "index.js",
     "scripts": {
-        "dev": " tsx watch src/server.ts"
+        "dev": "tsx watch src/server.ts",
+        "deploy": "tsx src/server.ts"
     },
-    "keywords": [],
-    "author": "",
+    "keywords": ["habits"],
+    "author": "Rafael Setton",
     "license": "ISC",
     "dependencies": {
         "@fastify/cors": "^8.2.0",
@@ -25,5 +26,8 @@
     },
     "prisma": {
         "seed": "tsx prisma/seed.ts"
+    },
+    "engines": {
+        "node": "18.13.0"
     }
 }
