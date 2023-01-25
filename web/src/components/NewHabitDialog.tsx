@@ -14,7 +14,7 @@ const weekDays = [
 ]
 
 export default function NewHabitDialog() {
-    const [title, setTitle] = useState('a')
+    const [title, setTitle] = useState('')
     const [selectedWeekDays, setSelectedWeekDays] = useState(Array(7).fill(false))
 
     function handleToggleWeekDay(index: number) {
@@ -33,12 +33,15 @@ export default function NewHabitDialog() {
         api.post("/habits", {
             title,
             weekDays: parsedWeekDays,
+        }, {
+            headers: { token: localStorage.getItem("habitsSessionToken") }
         })
 
         setTitle('')
         setSelectedWeekDays(Array(7).fill(false))
 
         alert("Hábito criado com sucesso")
+        window.location.reload()
     }
 
 

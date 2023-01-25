@@ -14,12 +14,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  email    String @id
+  password String
+  name     String
+
+  Habit Habit[]
+  Day   Day[]
+  Token Token[]
+
+  @@map("users")
+}
+
+model Token {
+  id        String @id @default(uuid())
+  user      User   @relation(fields: [userEmail], references: [email])
+  userEmail String
+
+  @@unique([userEmail])
+  @@map("tokens")
+}
+
 model Habit {
   id        String          @id @default(uuid())
   title     String
   createdAt DateTime        @default(now())
   dayHabits DayHabit[]
   weekDays  HabitWeekDays[]
+
+  user   User   @relation(fields: [userId], references: [email])
+  userId String
 
   @@map("habits")
 }
@@ -40,7 +64,10 @@ model Day {
   date      DateTime
   dayHabits DayHabit[]
 
-  @@unique([date])
+  user   User   @relation(fields: [userId], references: [email])
+  userId String
+
+  @@unique([date, userId])
   @@map("days")
 }
 

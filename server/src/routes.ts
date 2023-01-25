@@ -1,10 +1,34 @@
 import dayjs from "dayjs"
-import { FastifyInstance } from "fastify"
+import { FastifyInstance, FastifyRequest } from "fastify"
 import { z } from 'zod'
 import { prisma } from "./lib/prisma"
+import { Prisma, User } from "@prisma/client"
+
+async function getUserFromRequest(request: FastifyRequest): Promise<User> {
+    const summaryHeaders = z.object({
+        token: z.string().uuid()
+    })
+
+    const { token } = summaryHeaders.parse(request.headers)
+
+    const userToken = await prisma.token.findUnique({
+        where: {
+            id: token
+        },
+        include: {
+            user: true
+        }
+    })
+
+    if (!userToken) throw Error()
+
+    return userToken.user
+}
 
 export default async function appRoutes(app: FastifyInstance) {
     app.post("/habits", async (request) => {
+        const { email } = await getUserFromRequest(request)
+
         const createHabitBody = z.object({
             title: z.string(),
             weekDays: z.array(z.number().min(0).max(6))
@@ -13,7 +37,7 @@ export default async function appRoutes(app: FastifyInstance) {
         const { title, weekDays } = createHabitBody.parse(request.body)
 
         const today = dayjs().startOf("day").add(dayjs().utcOffset(), 'minute').toDate()
-        console.log(`Creating habit '${title}' at (${today.toISOString()})`)
+        console.log(`Creating habit '${title}' at (${today.toISOString()}) for user id='${email}'`)
 
         const habit = await prisma.habit.create({
             data: {
@@ -21,7 +45,8 @@ export default async function appRoutes(app: FastifyInstance) {
                 createdAt: today,
                 weekDays: {
                     create: weekDays.map(weekDay => ({ weekDay }))
-                }
+                },
+                userId: email
             }
         })
         return {
@@ -30,12 +55,15 @@ export default async function appRoutes(app: FastifyInstance) {
     })
 
     app.get("/day", async (request) => {
-        const getDayParams = z.object({
+        const { email } = await getUserFromRequest(request)
+
+        const getDayQueryParams = z.object({
             date: z.coerce.date()
         })
 
-        const date = dayjs(getDayParams.parse(request.query).date).toDate()
-        console.log(`Getting day: ${date.toISOString()}`)
+        const date = dayjs(getDayQueryParams.parse(request.query).date).toDate()
+        console.log(`Getting day: ${date.toISOString()} for user id='${email}'`)
+
         const possibleHabits = await prisma.habit.findMany({
             where: {
                 createdAt: {
@@ -47,14 +75,18 @@ export default async function appRoutes(app: FastifyInstance) {
                             equals: date.getUTCDay()
                         }
                     }
-                }
+                },
+                userId: email
             }
 
         })
 
         const day = await prisma.day.findUnique({
             where: {
-                date: date
+                date_userId: {
+                    date: date,
+                    userId: email
+                }
             },
             include: {
                 dayHabits: true
@@ -69,19 +101,24 @@ export default async function appRoutes(app: FastifyInstance) {
 
     })
 
-    app.patch("/habits/:id/toggle", async (request) => {
+    app.patch("/habits/:habitId/toggle", async (request) => {
+        const { email } = await getUserFromRequest(request)
+
         const toggleHabitParams = z.object({
-            id: z.string().uuid()
+            habitId: z.string().uuid(),
         })
 
-        const { id } = toggleHabitParams.parse(request.params)
+        const { habitId } = toggleHabitParams.parse(request.params)
 
         const today = dayjs().startOf("day").add(dayjs().utcOffset(), 'minute').toDate()
-        console.log(`Toggling habit id='${id}' at (${today.toISOString()})`)
+        console.log(`Toggling habit id='${habitId}' at (${today.toISOString()}) for user id='${email}'`)
 
         let day = await prisma.day.findUnique({
             where: {
-                date: today
+                date_userId: {
+                    date: today,
+                    userId: email
+                }
             }
         })
 
@@ -89,6 +126,7 @@ export default async function appRoutes(app: FastifyInstance) {
             day = await prisma.day.create({
                 data: {
                     date: today,
+                    userId: email,
                 }
             })
         }
@@ -97,7 +135,7 @@ export default async function appRoutes(app: FastifyInstance) {
             where: {
                 dayId_habitId: {
                     dayId: day.id,
-                    habitId: id,
+                    habitId: habitId,
                 }
             }
         })
@@ -113,7 +151,7 @@ export default async function appRoutes(app: FastifyInstance) {
             dayHabit = await prisma.dayHabit.create({
                 data: {
                     dayId: day.id,
-                    habitId: id,
+                    habitId: habitId,
                 }
             })
         }
@@ -121,9 +159,24 @@ export default async function appRoutes(app: FastifyInstance) {
             status,
             dayHabit
         }
+
     })
 
-    app.get("/summary", async () => {
+    app.get("/summary", async (request, response) => {
+        const user = await getUserFromRequest(request)
+
+        if (!user) {
+            response.statusCode = 401
+            return {
+                error: "Unauthorized",
+                message: "Token de sessão inválido",
+                statusCode: 401,
+            }
+        }
+
+        const userId = user.email
+        console.log(`Gettin summary for ${userId}`)
+
         const summary = await prisma.$queryRaw`
             SELECT 
                 D.id, 
@@ -143,11 +196,123 @@ export default async function appRoutes(app: FastifyInstance) {
                     WHERE 
                         HWD.weekDay = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int) 
                         AND H.createdAt <= D.date
+                        AND H.userId = ${userId}
                 ) as possible
             FROM days D
+            WHERE 
+                D.userId = ${userId}
 
         `
 
         return summary
+    })
+
+    app.post("/users", async (request) => {
+        const createUserBody = z.object({
+            email: z.string(),
+            name: z.string(),
+            password: z.string(),
+        })
+
+        const { email, name, password } = createUserBody.parse(request.body)
+
+        console.log(`Creating user '${name}'`)
+
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password,
+            }
+        })
+        return user
+    })
+
+    app.post("/login", async (request, response) => {
+        const getUserBody = z.object({
+            email: z.string(),
+            password: z.string(),
+        })
+
+        const { email, password } = getUserBody.parse(request.body)
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        })
+
+        if (!user) {
+            response.statusCode = 400
+            return {
+                error: "Bad Request",
+                message: "Usuário Inválido",
+                statusCode: 400,
+            }
+        }
+        if (password != user.password) {
+            response.statusCode = 401
+            return {
+                error: "Unauthorized",
+                message: "Senha Incorreta",
+                statusCode: 401,
+            }
+        }
+
+        let token;
+        try {
+            token = await prisma.token.create({
+                data: {
+                    userEmail: email
+                },
+            })
+        } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+                token = await prisma.token.findUnique({
+                    where: {
+                        userEmail: email
+                    }
+                })
+            } else { throw e }
+        }
+        return {
+            message: "Login bem sucedido",
+            statusCode: 200,
+            token: token!.id,
+        }
+    })
+
+    app.post("/register", async (request, response) => {
+        const getUserBody = z.object({
+            name: z.string(),
+            email: z.string(),
+            password: z.string(),
+        })
+
+        const { email } = getUserBody.parse(request.body)
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        })
+
+        if (user) {
+            response.statusCode = 400
+            return {
+                error: "Bad Request",
+                message: "Usuário Já Existe",
+                statusCode: 400,
+            }
+        }
+
+        await prisma.user.create({
+            data: getUserBody.parse(request.body)
+        })
+
+        return {
+            message: "Registro bem sucedido",
+            statusCode: 200,
+        }
     })
 }

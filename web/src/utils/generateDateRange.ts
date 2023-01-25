@@ -4,7 +4,7 @@ export default function generateDateRange(): Date[] {
     const begginingOfTime = dayjs().startOf("year").add(dayjs().utcOffset(), 'minute')
 
 
-    const today = new Date()
+    const today = dayjs().add(dayjs().utcOffset(), 'minute')
 
     const dates = []
     let compareDate = begginingOfTime

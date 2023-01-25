@@ -20,10 +20,15 @@ type Summary = Array<{
 export default function Table() {
     const [summary, setSummary] = useState<Summary>([])
     const [loading, setLoading] = useState(false)
+    const token = localStorage.getItem("habitsSessionToken")
 
     useEffect(() => {
         setLoading(true)
-        api.get("/summary").then(res => setSummary(res.data)).then(() => setLoading(false))
+        api.get("/summary", {
+            headers: {
+                token,
+            }
+        }).then(res => setSummary(res.data)).then(() => setLoading(false))
 
     }, [])
 

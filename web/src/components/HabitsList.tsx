@@ -21,20 +21,23 @@ interface HabitsInfo {
 export default function HabitsList({ date, onCompletedChanged }: HabitsListProps) {
     const parsedDate = date.add(dayjs().utcOffset(), 'minutes')
     const [data, setData] = useState<HabitsInfo>({ possibleHabits: [], completedHabits: [] })
-    const isPast = parsedDate.isBefore(dayjs().subtract(1, 'day'))
-
+    const isPast = parsedDate.isBefore(dayjs().subtract(1, 'day').add(dayjs().utcOffset(), 'minutes'))
+    const token = localStorage.getItem("habitsSessionToken")
 
     useEffect(() => {
         api.get("/day", {
             params: {
                 date: parsedDate.toString()
-            }
+            },
+            headers: { token }
         }).then(res => setData(res.data))
 
     }, [])
 
     function handleToggleHabit(habitId: string) {
-        api.patch(`/habits/${habitId}/toggle`)
+        api.patch(`/habits/${habitId}/toggle`, {}, {
+            headers: { token }
+        })
 
         var newCompleted = data.completedHabits
         if (newCompleted.includes(habitId))

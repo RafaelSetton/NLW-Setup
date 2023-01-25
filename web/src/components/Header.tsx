@@ -1,12 +1,13 @@
 import logoImage from '../assets/logo.svg'
-import { Plus, X } from 'phosphor-react'
-
+import { Plus, SignOut, X } from 'phosphor-react'
+import { useNavigate } from 'react-router-dom'
 
 import * as Dialog from '@radix-ui/react-dialog'
 import NewHabitDialog from './NewHabitDialog'
 
 
 export default function Header() {
+    const navigate = useNavigate()
     return (
         <div className="w-full max-w-3xl mx-auto flex items-center justify-between">
             <img src={logoImage} alt="Habits" />
@@ -36,6 +37,14 @@ export default function Header() {
                 </Dialog.Portal>
 
             </Dialog.Root>
+
+
+            <SignOut size={40} className='bg-red-800 text-zinc-100 p-1 rounded-xl cursor-pointer' onClick={() => {
+                localStorage.setItem("habitsSessionToken", "")
+                navigate("/")
+            }} />
+
+
         </div>
     )
 }
