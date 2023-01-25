@@ -23,14 +23,14 @@ export default function NewHabitDialog() {
         setSelectedWeekDays(copy)
     }
 
-    function createNewHabit(event: FormEvent) {
+    async function createNewHabit(event: FormEvent) {
         event.preventDefault()
 
         const parsedWeekDays = selectedWeekDays.map((wd, i) => wd ? i : null).filter(el => el !== null)
 
         if (!title.trim() || parsedWeekDays.length == 0) return;
 
-        api.post("/habits", {
+        await api.post("/habits", {
             title,
             weekDays: parsedWeekDays,
         }, {

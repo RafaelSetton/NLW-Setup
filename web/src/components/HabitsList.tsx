@@ -30,7 +30,7 @@ export default function HabitsList({ date, onCompletedChanged }: HabitsListProps
                 date: parsedDate.toString()
             },
             headers: { token }
-        }).then(res => setData(res.data))
+        }).then(res => setData(res.data)).then(() => console.log(data))
 
     }, [])
 

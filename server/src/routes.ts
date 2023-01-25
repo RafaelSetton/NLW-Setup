@@ -315,4 +315,93 @@ export default async function appRoutes(app: FastifyInstance) {
             statusCode: 200,
         }
     })
+
+    app.delete("/dev/weekDay", async (request, response) => {
+        const { email } = await getUserFromRequest(request)
+        if (email != "rasealca2017@gmail.com") {
+            response.statusCode = 401
+            return {
+                error: "Unauthorized",
+                message: "Somente o administrador pode fazer essa operação",
+                statusCode: 401,
+            }
+        }
+
+        const toggleHabitParams = z.object({
+            IDs: z.array(z.string()),
+        })
+
+        const { IDs } = toggleHabitParams.parse(request.body)
+
+        await prisma.habitWeekDays.deleteMany({
+            where: {
+                id: {
+                    in: IDs,
+                }
+            }
+        })
+    })
+
+    app.delete("/dev/habit", async (request, response) => {
+        const { email } = await getUserFromRequest(request)
+        if (email != "rasealca2017@gmail.com") {
+            response.statusCode = 401
+            return {
+                error: "Unauthorized",
+                message: "Somente o administrador pode fazer essa operação",
+                statusCode: 401,
+            }
+        }
+
+        const toggleHabitParams = z.object({
+            IDs: z.array(z.string()),
+        })
+
+        const { IDs } = toggleHabitParams.parse(request.body)
+
+        await prisma.habitWeekDays.deleteMany({
+            where: {
+                habitId: {
+                    in: IDs,
+                }
+            }
+        })
+        await prisma.habit.deleteMany({
+            where: {
+                id: {
+                    in: IDs,
+                }
+            }
+        })
+    })
+
+    app.get("/dev", async (request, response) => {
+        const { email } = await getUserFromRequest(request)
+        if (email != "rasealca2017@gmail.com") {
+            response.statusCode = 401
+            return {
+                error: "Unauthorized",
+                message: "Somente o administrador pode fazer essa operação",
+                statusCode: 401,
+            }
+        }
+
+
+        return await prisma.user.findMany({
+            include: {
+                Day: {
+                    include: {
+                        dayHabits: true
+                    }
+                },
+                Habit: {
+                    include: {
+                        weekDays: true
+                    }
+                },
+                Token: true,
+            }
+        })
+
+    })
 }
