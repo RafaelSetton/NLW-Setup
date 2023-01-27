@@ -16,6 +16,7 @@ const weekDays = [
 export default function NewHabitDialog() {
     const [title, setTitle] = useState('')
     const [selectedWeekDays, setSelectedWeekDays] = useState(Array(7).fill(false))
+    const [disabled, setDisabled] = useState(false)
 
     function handleToggleWeekDay(index: number) {
         var copy = selectedWeekDays.slice()
@@ -25,6 +26,7 @@ export default function NewHabitDialog() {
 
     async function createNewHabit(event: FormEvent) {
         event.preventDefault()
+        setDisabled(true)
 
         const parsedWeekDays = selectedWeekDays.map((wd, i) => wd ? i : null).filter(el => el !== null)
 
@@ -37,10 +39,6 @@ export default function NewHabitDialog() {
             headers: { token: localStorage.getItem("habitsSessionToken") }
         })
 
-        setTitle('')
-        setSelectedWeekDays(Array(7).fill(false))
-
-        alert("Hábito criado com sucesso")
         window.location.reload()
     }
 
@@ -89,7 +87,8 @@ export default function NewHabitDialog() {
             <button
                 type="submit"
                 className="mt-6 rounded-lg p-4 flex items-center justify-center gap-3 font-semibold bg-green-600 hover:bg-green-500 transition-colors
-                focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:opacity-50"
+                disabled={disabled}
             >
                 <Check size={20} weight="bold" />
                 Confirmar

@@ -26,8 +26,8 @@ export default function Login({ onSuccess }: LoginProps) {
             email,
             password,
         }).then(response => {
+            console.log(response)
             if (response.status == 200) {
-                console.log(response)
                 localStorage.setItem("habitsSessionToken", response.data.token)
                 onSuccess!(response.data.token)
             } else {

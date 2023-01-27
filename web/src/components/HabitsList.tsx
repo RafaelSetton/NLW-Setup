@@ -20,17 +20,19 @@ interface HabitsInfo {
 
 export default function HabitsList({ date, onCompletedChanged }: HabitsListProps) {
     const parsedDate = date.add(dayjs().utcOffset(), 'minutes')
+    const [loading, setLoading] = useState(false)
     const [data, setData] = useState<HabitsInfo>({ possibleHabits: [], completedHabits: [] })
     const isPast = parsedDate.isBefore(dayjs().subtract(1, 'day').add(dayjs().utcOffset(), 'minutes'))
     const token = localStorage.getItem("habitsSessionToken")
 
     useEffect(() => {
+        setLoading(true)
         api.get("/day", {
             params: {
                 date: parsedDate.toString()
             },
             headers: { token }
-        }).then(res => setData(res.data)).then(() => console.log(data))
+        }).then(res => setData(res.data)).then(() => console.log(data)).then(() => setLoading(false))
 
     }, [])
 
@@ -55,7 +57,7 @@ export default function HabitsList({ date, onCompletedChanged }: HabitsListProps
     return (
         <div className="mt-6 flex flex-col gap-3">
             {
-                data.possibleHabits.map(habit => (
+                data.possibleHabits.length || loading ? data.possibleHabits.map(habit => (
                     <RadixCheckBox.Root
                         key={habit.id}
                         onCheckedChange={() => handleToggleHabit(habit.id)}
@@ -76,7 +78,7 @@ export default function HabitsList({ date, onCompletedChanged }: HabitsListProps
                             {habit.title}
                         </span>
                     </RadixCheckBox.Root>
-                ))
+                )) : <p className="flex flex-wrap text-center pt-2 px-2 w-[250px] text-zinc-500">Não há nenhum hábito registrado nesse dia</p>
             }
 
         </div>

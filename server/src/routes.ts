@@ -25,7 +25,22 @@ async function getUserFromRequest(request: FastifyRequest): Promise<User> {
     return userToken.user
 }
 
+function today() { return dayjs().add(dayjs().utcOffset(), 'minute').startOf("day").add(dayjs().utcOffset(), 'minute').toDate() }
+
 export default async function appRoutes(app: FastifyInstance) {
+    // Rota para Ping do Uptime Robot
+
+    app.head("/", async (request) => {
+        console.log("Ping!")
+        return {
+            message: "Server running",
+            host: request.hostname,
+            statusCode: 200,
+        }
+    })
+
+    // Rotas gerais da aplicação
+
     app.post("/habits", async (request) => {
         const { email } = await getUserFromRequest(request)
 
@@ -36,13 +51,12 @@ export default async function appRoutes(app: FastifyInstance) {
 
         const { title, weekDays } = createHabitBody.parse(request.body)
 
-        const today = dayjs().startOf("day").add(dayjs().utcOffset(), 'minute').toDate()
-        console.log(`Creating habit '${title}' at (${today.toISOString()}) for user id='${email}'`)
+        console.log(`Creating habit '${title}' at (${today().toISOString()}) for user id='${email}'`)
 
         const habit = await prisma.habit.create({
             data: {
                 title,
-                createdAt: today,
+                createdAt: today(),
                 weekDays: {
                     create: weekDays.map(weekDay => ({ weekDay }))
                 },
@@ -110,13 +124,12 @@ export default async function appRoutes(app: FastifyInstance) {
 
         const { habitId } = toggleHabitParams.parse(request.params)
 
-        const today = dayjs().startOf("day").add(dayjs().utcOffset(), 'minute').toDate()
-        console.log(`Toggling habit id='${habitId}' at (${today.toISOString()}) for user id='${email}'`)
+        console.log(`Toggling habit id='${habitId}' at (${today().toISOString()}) for user id='${email}'`)
 
         let day = await prisma.day.findUnique({
             where: {
                 date_userId: {
-                    date: today,
+                    date: today(),
                     userId: email
                 }
             }
@@ -125,7 +138,7 @@ export default async function appRoutes(app: FastifyInstance) {
         if (!day) {
             day = await prisma.day.create({
                 data: {
-                    date: today,
+                    date: today(),
                     userId: email,
                 }
             })
@@ -315,6 +328,8 @@ export default async function appRoutes(app: FastifyInstance) {
             statusCode: 200,
         }
     })
+
+    // Rotas para testes e manutenção
 
     app.delete("/dev/weekDay", async (request, response) => {
         const { email } = await getUserFromRequest(request)

@@ -12,7 +12,6 @@ export default function Register() {
     function tryRegister(event: FormEvent) {
         event.preventDefault()
 
-
         if (name.length * email.length * password.length == 0) return alert("Você deve preencher todos os campos")
 
         api.post("/register", {
