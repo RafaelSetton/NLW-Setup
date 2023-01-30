@@ -1,3 +1,4 @@
 node_modules/
 
 step-by-step.log
+src/lib/ServiceAccountKey.json

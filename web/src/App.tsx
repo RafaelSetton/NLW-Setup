@@ -17,7 +17,7 @@ export default function App() {
           <Route element={<Register />} path="/register" />
         </Routes>
       </HashRouter>
-      <footer className='text-center text-zinc-400 absolute bottom-10 right-10' >
+      <footer className='text-center text-zinc-400 fixed bottom-10 right-10 w-3/12' >
         Este projeto foi desenvolvido durante a <br />
         NLW Setup e é mantido por Rafael Setton
       </footer>
